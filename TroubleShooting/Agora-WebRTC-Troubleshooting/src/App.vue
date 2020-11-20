@@ -1,19 +1,31 @@
 <template>
-  <v-app>
+  <v-app :class="text.lang">
     <!-- title bar -->
     <v-toolbar dark color="primary">
-      <v-toolbar-title>Agora WebRTC Precall Test</v-toolbar-title>
+      <v-toolbar-title>{{text.toolbar_title}}</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn disabled flat icon>
-        <v-icon>build</v-icon>
+      <v-btn v-on:click="switchLanguage" color="blue" :disabled="languageDisabled">
+        {{text.language}}
       </v-btn>
+      <!-- <v-btn disabled flat icon>
+        <v-icon>{{text.build}}</v-icon>
+      </v-btn> -->
       <v-btn v-if="!testing" color="success" @click.native="start">
-        Start
+        {{text.start_text}}
       </v-btn>
       <v-btn v-else color="error" disabled>
-        Running
+        {{text.running}}
       </v-btn>
     </v-toolbar>
+    <div class="github-box">
+      <a href="https://github.com/AgoraIO/Tools/tree/master/TroubleShooting/Agora-WebRTC-Troubleshooting">
+        <span class="github"></span>
+        <div class="github-text">
+          <span class="github-text1">GITHUB</span><br> 
+          <span class="github-text2">点击查看源码</span> 
+        </div>
+      </a>
+    </div>
     <!-- end -->
     <v-content>
       <v-container fill-height>
@@ -23,14 +35,32 @@
             <v-card style="margin-top: 60px">
               <v-card-title>
                 <div class="headline">
-                  Follow the steps below to check if everything works for Agora Web Real Time Communication!
+                  {{text.following_step}}
                 </div>
               </v-card-title>
+              <v-card-text class="proxy">
+                <v-label>{{text.cloudProxy}}</v-label>
+                <v-btn-toggle v-model.lazy="isEnableCloudProxy" rounded>
+                  <v-btn :value=true @click.native="toggleProxy(true)">{{text.cloudProxy_enable}}</v-btn>
+                  <v-btn :value=false @click.native="toggleProxy(false)">{{text.cloudProxy_disable}}</v-btn>
+                </v-btn-toggle>
+              </v-card-text>
+              <v-card-text class="proxy" v-if="isEnableCloudProxy">
+                <v-label>{{text.cloudProxy_mode}}</v-label>
+                <v-btn-toggle v-model.lazy="fixProxyPort"rounded>
+                  <v-btn :value=false @click.native="toggleProxyMode(false)">{{text.cloudProxy_default}}</v-btn>
+                  <v-btn :value=true @click.native="toggleProxyMode(true)">{{text.cloudProxy_fix}}</v-btn>
+                </v-btn-toggle>
+                <v-card-text class="tip" v-if="fixProxyPort">
+                  <span class="tip_icon"></span>{{text.cloudProxy_tips}}
+                  <a href="https://docs.agora.io/cn/Audio%20Broadcast/cloud_proxy_web?platform=Web">{{text.cloudProxy_tips_link}}</a>
+                </v-card-text>
+              </v-card-text>
               <v-card-text>
                 <v-list>
                   <v-list-tile v-for="item in testSuites" :key="item.id">
                     <v-list-tile-content>
-                      <v-list-tile-title>{{item.label}}</v-list-tile-title>
+                      <v-list-tile-title>{{t(item.label)}}</v-list-tile-title>
                     </v-list-tile-content>
                   </v-list-tile>
                 </v-list>
@@ -43,7 +73,7 @@
             <v-card style="margin-top: 60px">
               <v-toolbar color="info" dark>
                 <v-toolbar-title>
-                  Test Report
+                  {{text.test_report}}
                 </v-toolbar-title>
               </v-toolbar>
               <v-list>
@@ -51,7 +81,7 @@
                   <v-list-tile slot="activator">
                     <v-icon v-if="item.notError" color="success">done</v-icon>
                     <v-icon v-else color="error">close</v-icon>
-                    <span> {{item.label}}</span>
+                    <span>{{t(item.label)}}</span>
                   </v-list-tile>
                   <v-list-tile>
                     <v-list-tile-content v-html="item.extra"></v-list-tile-content>
@@ -69,8 +99,7 @@
                   :key="item.id" :step="item.id"
                   :complete="item.complete || (currentTestSuite > item.id)"
                   :rules="[() => item.notError]">
-                  {{item.label}}
-                  <small v-if="!item.notError">{{item.extra}}</small>
+                  {{t(item.label)}}
                 </v-stepper-step>
               </v-stepper-header>
 
@@ -83,18 +112,18 @@
                         <v-card style="height: 100%" color="info" class="white--text">
                           <v-card-title>
                             <div class="headline">
-                              Browser Check
+                              {{text.browser_check}}
                             </div>
                           </v-card-title>
                           <v-card-text>
-                            In this step, we will check if the browser is supported by Agora Web SDK.
+                            {{text.support_desc}}
                           </v-card-text>
                         </v-card>
                       </v-flex>
                       <v-flex md6 xs12>
                         <v-card style="height: 100%">
                           <v-card-title>
-                            Checking {{browserInfo}}
+                            {{text.checking}} {{browserInfo}}
                           </v-card-title>
                           <v-card-text>
                             <v-progress-linear :indeterminate="true"></v-progress-linear>
@@ -112,18 +141,18 @@
                         <v-card color="info" style="height: 100%" class="white--text">
                           <v-card-title>
                             <div class="headline">
-                              Microphone Check
+                              {{text.microphone_check}}
                             </div>
                           </v-card-title>
                           <v-card-text>
-                            In this step, we will check if your mic works properly.
+                            {{text.microphone_check_desc}}
                           </v-card-text>
                         </v-card>
                       </v-flex>
                       <v-flex md6 xs12>
                         <v-card style="height: 100%">
                           <v-card-title>
-                            Say something to your microphone and see if the progress bar below changes.
+                            {{text.microphone_volume_check_desc}}
                           </v-card-title>
                           <v-card-text>
                             <v-progress-linear :value="inputVolume"></v-progress-linear>
@@ -141,14 +170,14 @@
                       <v-flex md6 xs12>
                         <v-card color="info" class="white--text" style="height: 100%">
                           <v-card-title>
-                            <div class="headline">Speaker Check</div>
+                            <div class="headline">{{text.speacker_check}}</div>
                           </v-card-title>
                           <v-card-text>
-                            Play the sample music on the right, and see if you can hear it.
+                            {{text.speaker_check_desc}}
                           </v-card-text>
                           <v-card-actions>
-                            <v-btn @click="resolveCheck">Yes</v-btn>
-                            <v-btn flat @click="rejectCheck">No</v-btn>
+                            <v-btn @click="resolveCheck">{{text.yes}}</v-btn>
+                            <v-btn flat @click="rejectCheck">{{text.no}}</v-btn>
                           </v-card-actions>
                         </v-card>
                       </v-flex>
@@ -156,12 +185,12 @@
                       <v-flex md6 xs12>
                         <v-card style="height: 100%">
                           <v-card-title>
-                            <div class="headline">Sample Music</div>
+                            <div class="headline">{{text.sample_music}}</div>
                           </v-card-title>
                           <v-card-text>
                             <audio id="sampleMusic" controls="controls">
                               <source src="./assets/music.mp3" type="audio/mp3">
-                              Your browser does not support the audio tag.
+                              {{text.sample_music_desc}}
                             </audio>
                           </v-card-text>
                         </v-card>
@@ -177,10 +206,10 @@
                       <v-flex md6 xs12>
                         <v-card color="info" class="white--text" style="height: 100%">
                           <v-card-title>
-                            <div class="headline">Resolution Check</div>
+                            <div class="headline">{{text.resolution_check}}</div>
                           </v-card-title>
                           <v-card-text>
-                            We will check if video of typical resolutions displays properly.
+                            {{text.resolution_check_desc}}
                           </v-card-text>
                         </v-card>
                       </v-flex>
@@ -188,7 +217,7 @@
                       <v-flex md6 xs12>
                         <v-card style="height: 100%">
                           <v-card-title>
-                            Resolutions
+                            {{text.resolution_list}}
                           </v-card-title>
                           <v-card-text>
                             <v-list>
@@ -218,15 +247,15 @@
                       <v-flex md12>
                         <v-card >
                           <v-card-title>
-                            <div>We will build a receiver and a sender to check the network connection.</div>
+                            <div>{{text.network_check_desc}}</div>
                           </v-card-title>
                           <v-card-text v-if="renderChart">
                             <v-layout row wrap>
                               <v-flex md6 xs12>
-                                <linechart :grid="grid" :data="bitrateArray" :settings="bitrateChartSettings"></linechart>
+                                <linechart :grid="grid" :data="bitrateData" :settings="bitrateChartSettings"></linechart>
                               </v-flex>
                               <v-flex md6 xs12>
-                                <linechart :grid="grid" :data="packetsArray" :settings="packetsChartSettings"></linechart>
+                                <linechart :grid="grid" :data="packetsData" :settings="packetsChartSettings"></linechart>
                               </v-flex>
                             </v-layout>
                           </v-card-text>
@@ -237,7 +266,9 @@
                 </v-stepper-content>
             </v-stepper>
             <!-- test area -->
-            <div id="test-send"></div>
+            <div id="test-send">
+            <video id="sample_video" src="./assets/sample.mp4" style="display:none" controls loop></video>
+            </div>
             <div id="test-recv"></div>
           </v-flex>
           <!-- snackbar -->
@@ -246,46 +277,45 @@
             color="info"
             :timeout="0"
             >
-            Seeing is believing, let us open the camera and have a look?
+            {{text.notice}}
             <v-btn
               dark
               flat
               @click="haveATry"
             >
-              Yes
+              {{text.yes}}
             </v-btn>
             <v-btn
               dark
               flat
               @click="snackbar = false"
             >
-              No
+              {{text.no}}
             </v-btn>
           </v-snackbar>
           <!-- dialog -->
           <v-dialog v-model="dialog" persistent max-width="360">
             <v-card>
               <v-card-title>
-                <v-tabs v-model="currentProfile">
+                <v-tabs>
                   <v-tab
                     v-for="(item, index) in ProfileForTry"
-                    @click="retry"
-                    :disabled="trying"
+                    @click="retry(index)"
                     :key="index"
                   >
-                    {{item}}
+                    {{item.resolution}}
                   </v-tab>
                 </v-tabs>
               </v-card-title>
               <v-card-text>
                 <div id="modal-video" v-if="!errMsgForTry">
-
+                  <div v-if="!showVideo">{{text.videoText}}</div>
                 </div>
                 <div v-else>{{errMsgForTry}}</div>
               </v-card-text>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="green darken-1" flat @click.native="endTry">Close</v-btn>
+                <v-btn color="green darken-1" flat @click.native="endTry">{{text.close}}</v-btn>
               </v-card-actions>
             </v-card>
           </v-dialog>
@@ -300,41 +330,51 @@
         tile
         color="grey lighten-5"
       >
-        <v-card-text style="text-align:right">SDK Version: {{sdkVersion}}</v-card-text>
+        <v-card-text style="text-align:right">SDK {{text.Version}}: {{sdkVersion}}</v-card-text>
       </v-card>
     </v-footer>
   </v-app>
 </template>
 
 <script>
+// import  VConsole  from  'vconsole'
 import AgoraRtc from "agora-rtc-sdk";
+const langs = ['zh', 'en'];
 import { profileArray, APP_ID } from "./utils/settings";
+import * as i18n from './utils/i18n'
+
+// const log = console.log.bind(console)
+
+// If need mobile phone terminal debugging
+// let vConsole = new VConsole()
+// log("testVConsole")
+
 export default {
   name: "App",
   components: {
     linechart: () => import("./components/linechart.vue")
   },
+  mounted() {
+    document.title = this.text.toolbar_title
+  },
   data() {
-    this.bitrateChartSettings = {
-      yAxisName: ["bitrate (kbps)"]
-    };
-    this.packetsChartSettings = {
-      yAxisType: ["percent"],
-      yAxisName: ["packet loss"]
-    };
-    this.grid = {
-      left: 50
-    };
-    this.browserInfo = navigator.appVersion || "Current Browser";
     return {
-      sdkVersion: AgoraRtc.VERSION || '2.4.0',
-      trying: false,
+      grid: {
+        left: 50
+      },
+      languageDisabled: false,
+      browserInfo: navigator.appVersion || "Current Browser",
+      language: navigator.language.match(/^zh/) ? 0 : 1,
+      sdkVersion: AgoraRtc.VERSION,
       snackbar: false,
+      showVideo: false,
       dialog: false,
       currentTestSuite: "-1",
       inputVolume: 0,
       renderChart: false,
       testing: false,
+      isEnableCloudProxy: false,
+      fixProxyPort: false,
       profiles: profileArray.map(item => {
         item.status = "pending";
         return item;
@@ -342,50 +382,117 @@ export default {
       testSuites: [
         {
           id: "0",
-          label: "Brower Compatibility",
+          label: "browser_compatibility",
           notError: true,
           extra: ""
         },
         {
           id: "1",
-          label: "Microphone",
+          label: "microphone",
           notError: true,
           extra: ""
         },
         {
           id: "2",
-          label: "Speaker",
+          label: "speaker",
           notError: true,
           extra: ""
         },
         {
           id: "3",
-          label: "Resolution",
+          label: "resolution",
           notError: true,
           extra: ""
         },
         {
           id: "4",
-          label: "Connection",
+          label: "connection",
           notError: true,
           extra: ""
         }
       ],
-      bitrateArray: {
-        columns: ["index", "Video Bitrate", "Audio Bitrate"],
-        rows: [{ index: 0, "Video Bitrate": 0, "Audio Bitrate": 0 }]
+      bitrateData: {
+          columns: ['index', 'tVideoBitrate', 'tAudioBitrate'],
+          rows: [
+            { 
+              index: 0, 
+              'tVideoBitrate': 0, 
+              'tAudioBitrate': 0 
+            },
+        ]
       },
-      packetsArray: {
-        columns: ["index", "Video Packet Loss", "Audio Packet Loss"],
-        rows: [{ index: 0, "Video Packet Loss": 0, "Audio Packet Loss": 0 }]
+      packetsData: {
+        columns: ["index", 'tVideoPacketLoss', 'tAudioPacketLoss'],
+        rows: [
+          { 
+            index: 0, 
+            'tVideoPacketLoss': 0, 
+            'tAudioPacketLoss': 0 
+          }
+        ]
       },
       errMsgForTry: "",
-      ProfileForTry: ["480p_1", "720p_1", "1080p_1"],
+      ProfileForTry: [
+        {
+          resolution: "480p_1",
+          isSuccess: false
+        },
+        {
+          resolution: "720p_1",
+          isSuccess: false
+        },
+        {
+          resolution: "1080p_1",
+          isSuccess: false
+        },
+      ],
       currentProfile: 0
     };
   },
 
+  computed: {
+    text() {
+      const lang = langs[this.language] || 'en'
+      const property = i18n[lang]['default']
+      const obj = {}
+      for (let key of Object.keys(property)) {
+        Object.assign(obj, {
+          [`${key}`]: property[key]
+        })
+      }
+      return obj;
+    },
+    bitrateChartSettings() {
+      return {
+        yAxisName: [this.t('bitrate') + '(kbps)'],
+        labelMap: {
+          tVideoBitrate: this.t('Video_Bitrate'),
+          tAudioBitrate: this.t('Audio_Bitrate')
+        },
+      }
+    },
+    packetsChartSettings() {
+      return {
+        yAxisType: ['percent'],
+        yAxisName: [this.t('packet_loss')],
+        labelMap: {
+          tVideoPacketLoss: this.t('Video_Packet_Loss'),
+          tAudioPacketLoss: this.t('Audio_Packet_Loss')
+        },
+      }
+    },
+  },
+
   methods: {
+    t (key) {
+      const lang = langs[this.language] || 'en'
+      const property = i18n[lang]['default']
+      return property[key]
+    },
+    switchLanguage () {
+      this.language = this.language === 0 ? 1 : 0
+    },
+
     initialize() {
       this.ts = new Date().getTime();
       this.channel =
@@ -395,33 +502,65 @@ export default {
       this.recvId = Number.parseInt(String(this.ts).slice(7), 10) * 10 + 2;
       this.sendClient = AgoraRtc.createClient({ mode: 'live', codec: 'h264' });
       this.recvClient = AgoraRtc.createClient({ mode: 'live', codec: 'h264' });
+      if(this.isEnableCloudProxy && this.fixProxyPort){
+        this.sendClient.startProxyServer(2);
+        this.recvClient.startProxyServer(2);
+      }
+      else if(this.isEnableCloudProxy && !this.fixProxyPort){
+        this.sendClient.startProxyServer();
+        this.recvClient.startProxyServer();
+      }
     },
 
     initSendClient() {
-      return new Promise((resolve, reject) => {
-        this.sendStream = AgoraRtc.createStream({
-          streamID: this.sendId,
-          video: true,
-          audio: true,
-          screen: false
-        });
-        this.sendStream.setVideoProfile("720p_2");
-        this.sendClient.init(
-          APP_ID,
-          () => {
-            this.sendStream.init(
+        let isChrome = navigator.userAgent.indexOf("Chrome") >= 0;
+        if (isChrome){
+            let videoDOM = document.querySelector('#sample_video');
+            videoDOM.play();
+            videoDOM.muted = true;
+        }
+        setTimeout(() => {
+            if(isChrome){
+                let videoDOM = document.querySelector('#sample_video');
+                const videoStream = videoDOM.captureStream(60);
+                this.sendStream = AgoraRtc.createStream({
+                  streamID: this.sendId,
+                  video: true,
+                  audio: true,
+                  screen: false,
+                  videoSource: videoStream.getVideoTracks()[0],
+                  audioSource: videoStream.getAudioTracks()[0]
+                });
+            }
+            else {
+                this.sendStream = AgoraRtc.createStream({
+                  streamID: this.sendId,
+                  video: true,
+                  audio: true,
+                  screen: false
+                });
+            }
+            this.sendClient.init(
+              APP_ID,
               () => {
-                this.sendClient.join(
-                  null,
-                  this.channel,
-                  this.sendId,
+                this.sendStream.init(
                   () => {
-                    this.sendClient.publish(this.sendStream, err => {
-                      reject(err);
-                    });
-                    setTimeout(() => {
-                      resolve();
-                    });
+                    this.sendClient.join(
+                      null,
+                      this.channel,
+                      this.sendId,
+                      () => {
+                        this.sendClient.publish(this.sendStream, err => {
+                          reject(err);
+                        });
+                        setTimeout(() => {
+                          resolve();
+                        });
+                      },
+                      err => {
+                        reject(err);
+                      }
+                    );
                   },
                   err => {
                     reject(err);
@@ -432,12 +571,7 @@ export default {
                 reject(err);
               }
             );
-          },
-          err => {
-            reject(err);
-          }
-        );
-      });
+        }, 500);
     },
 
     initRecvClient() {
@@ -453,8 +587,8 @@ export default {
                 this.recvClient.on("stream-added", evt => {
                   this.recvClient.subscribe(evt.stream, err => {
                     clearInterval(this.detectInterval);
-                    this.bitrateArray = [];
-                    this.packetsArray = [];
+                    this.bitrateData = {};
+                    this.packetsData = {};
                     this.testSuites["4"].notError = false;
                     this.testSuites["4"].extra = err.msg;
                     this.destructAll();
@@ -463,8 +597,8 @@ export default {
                 });
                 this.recvClient.on("stream-removed", () => {
                   clearInterval(this.detectInterval);
-                  this.bitrateArray = [];
-                  this.packetsArray = [];
+                  this.bitrateData = {};
+                  this.packetsData = {};
                   this.testSuites["4"].notError = false;
                   this.testSuites["4"].extra = "Disconnected";
                   this.destructAll();
@@ -477,22 +611,22 @@ export default {
                   let i = 1;
                   this.detectInterval = setInterval(() => {
                     this.recvStream.getStats(e => {
-                      this.bitrateArray.rows.push({
+                      this.bitrateData.rows.push({
                         index: i,
-                        "Video Bitrate": this._calcBitrate(
+                        tVideoBitrate: this._calcBitrate(
                           e.videoReceiveBytes, i
                         ),
-                        "Audio Bitrate": this._calcBitrate(
+                        tAudioBitrate: this._calcBitrate(
                           e.audioReceiveBytes, i
                         )
                       });
-                      this.packetsArray.rows.push({
+                      this.packetsData.rows.push({
                         index: i,
-                        "Video Packet Loss": this._calcPacketLoss(
+                        tVideoPacketLoss: this._calcPacketLoss(
                           e.videoReceivePackets,
                           e.videoReceivePacketsLost
                         ),
-                        "Audio Packet Loss": this._calcPacketLoss(
+                        tAudioPacketLoss: this._calcPacketLoss(
                           e.audioReceivePackets,
                           e.audioReceivePacketsLost
                         ),
@@ -522,7 +656,12 @@ export default {
     _calcPacketLoss(recvPackets, recvPacketsLost) {
       let recvPacketsNumber = Number(recvPackets);
       let recvPacketsLostNumber = Number(recvPacketsLost);
-      return Number.parseFloat(recvPacketsLostNumber/(recvPacketsNumber+recvPacketsLostNumber)).toFixed(4);
+      let totalPacketsNumber = recvPacketsNumber + recvPacketsLostNumber
+      if(totalPacketsNumber) {
+        return Number((recvPacketsLostNumber / totalPacketsNumber).toFixed(4));
+      } else {
+        return '-'
+      }
     },
 
     /**
@@ -540,6 +679,10 @@ export default {
         this.sendClient.unpublish(this.sendStream);
         this.sendClient.leave();
         this.recvClient.leave();
+        if(this.isEnableCloudProxy){
+          this.sendClient.stopProxyServer();
+          this.recvClient.stopProxyServer();
+        }
         clearInterval(this.detectInterval);
       } catch (err) {
         throw(err);
@@ -555,16 +698,15 @@ export default {
           audio: true,
           screen: false
         });
-        this.sendStream.setVideoProfile(profile.enum);
+        this.sendStream.setVideoProfile(profile.resolution);
         this.sendStream.init(
           () => {
             this.sendStream.play("test-send");
             setTimeout(() => {
               let videoElement = document.querySelector("#video" + this.sendId);
-              if (
-                videoElement.videoWidth === profile.width &&
-                videoElement.videoHeight === profile.height
-              ) {
+              let videoArea = videoElement.videoWidth * videoElement.videoHeight
+              let profileArea = profile.width * profile.height
+              if (videoArea === profileArea) {
                 profile.status = "resolve";
                 resolve();
               } else {
@@ -590,6 +732,7 @@ export default {
       this.testing = true;
       this.snackbar = false;
       this.dialog = false;
+      this.languageDisabled = true;
       this.handleCompatibilityCheck();
     },
 
@@ -599,22 +742,34 @@ export default {
         item.extra = "";
         item.complete = false;
       });
-      (this.currentTestSuite = "-1"),
-        (this.inputVolume = 0),
-        (this.renderChart = false),
-        (this.testing = false),
-        (this.profiles = profileArray.map(item => {
-          item.status = "pending";
-          return item;
-        })),
-        (this.bitrateArray = {
-          columns: ["index", "Video Bitrate", "Audio Bitrate"],
-          rows: [{ index: 0, "Video Bitrate": 0, "Audio Bitrate": 0 }]
-        }),
-        (this.packetsArray = {
-          columns: ["index", "Video Packet Loss", "Audio Packet Loss"],
-          rows: [{ index: 0, "Video Packet Loss": 0, "Audio Packet Loss": 0 }]
-        });
+      this.currentTestSuite = "-1"
+      this.inputVolume = 0
+      this.renderChart = false
+      this.testing = false
+      this.profiles = profileArray.map(item => {
+        item.status = "pending";
+        return item;
+      })
+      this.bitrateData = {
+        columns: ["index", 'tVideoBitrate', 'tAudioBitrate'],
+        rows: [
+          { 
+            index: 0, 
+            'tVideoBitrate': 0, 
+            'tAudioBitrate': 0 
+          }
+        ]
+      }
+      this.packetsData = {
+        columns: ["index", 'tVideoPacketLoss', 'tAudioPacketLoss'],
+        rows: [
+          { 
+            index: 0, 
+            'tVideoPacketLoss': 0, 
+            'tAudioPacketLoss': 0 
+          }
+        ]
+      }
     },
 
     handleCompatibilityCheck() {
@@ -623,8 +778,8 @@ export default {
       setTimeout(() => {
         testSuite.notError = AgoraRtc.checkSystemRequirements();
         testSuite.notError
-          ? (testSuite.extra = "Fully supported")
-          : (testSuite.extra = "Some functions may be limited");
+          ? (testSuite.extra = this.t("fully_supported"))
+          : (testSuite.extra = this.t("some_functions_may_be_limited"));
         this.handleMicrophoneCheck();
       }, 3000);
     },
@@ -653,9 +808,9 @@ export default {
             this.sendStream.close();
             if (totalVolume < 60) {
               testSuite.notError = false;
-              testSuite.extra = "Can barely hear you";
+              testSuite.extra = this.t("can_barely_hear_you");
             } else {
-              testSuite.extra = "Microphone works well";
+              testSuite.extra = this.t("microphone_works_well");
             }
             this.handleSpeakerCheck();
           }, 7000);
@@ -681,7 +836,7 @@ export default {
 
     resolveCheck() {
       let testSuite = this.testSuites[this.currentTestSuite];
-      testSuite.extra = "Speaker works well";
+      testSuite.extra = this.t('speaker_works_well');
       let sound = document.querySelector("#sampleMusic");
       sound.pause();
       sound.currentTime = 0;
@@ -691,11 +846,19 @@ export default {
     rejectCheck() {
       let testSuite = this.testSuites[this.currentTestSuite];
       testSuite.notError = false;
-      testSuite.extra = "Something is wrong with the speaker";
+      testSuite.extra = this.t("speaker_wrong");
       let sound = document.querySelector("#sampleMusic");
       sound.pause();
       sound.currentTime = 0;
       this.handleCameraCheck();
+    },
+
+    toggleProxy(val) {
+      this.isEnableCloudProxy = val;
+    },
+
+    toggleProxyMode(val) {
+      this.fixProxyPort = val;
     },
 
     async handleCameraCheck() {
@@ -707,18 +870,19 @@ export default {
             this.sendStream && this.sendStream.close();
           })
           .catch(err => {
-            if (err !== "Resolution mismatched") {
+            if (err === "Resolution mismatched") {
               testSuite.notError = false;
               testSuite.extra = err.msg;
+              this.sendStream && this.sendStream.close();
             }
           });
       }
 
-      if (testSuite.notError) {
+      if (this.profiles) {
         let arr = [];
-        this.profiles.map(item => {
+        this.profiles.forEach(item => {
           let str = `${item.width} * ${item.height} ${
-            item.status === "resolve" ? "support" : "not support"
+            this.t(item.status === "resolve" ? "support" : "not_support")
           }`;
           arr.push(str);
         });
@@ -756,27 +920,34 @@ export default {
           this.currentTestSuite = "5";
           this.snackbar = true;
           if (
-            this.bitrateArray.rows.length === 1 ||
-            this.packetsArray.rows.length === 1
+            this.bitrateData.rows.length === 1 ||
+            this.packetsData.rows.length === 1
           ) {
-            testSuite.extra = "Poor connection";
+            testSuite.extra = "poor_connection";
             testSuite.notError = false;
           }
-          if (testSuite.notError) {
-            let bitrateInfo = this.bitrateArray.rows.pop();
-            let packetInfo = this.packetsArray.rows.pop();
-            testSuite.extra = `Video Bitrate: ${
-              bitrateInfo["Video Bitrate"]
-            } kbps </br>
-                              Audio Bitrate: ${
-                                bitrateInfo["Audio Bitrate"]
-                              } kbps </br>
-                              Video Packet Loss: ${
-                                packetInfo["Video Packet Loss"]*100
-                              } % </br>
-                              Audio Packet Loss: ${
-                                packetInfo["Audio Packet Loss"]*100
-                              } % </br>`;
+          if (this.bitrateData && this.packetsData) {
+            let bitrateInfo = this.bitrateData.rows.pop();
+            let packetInfo = this.packetsData.rows.pop();
+          
+            let videoBitrate = bitrateInfo.tVideoBitrate
+            let audioBitrate = bitrateInfo.tAudioBitrate
+            let videoPacketLoss = packetInfo.tVideoPacketLoss
+            let audioPacketLoss = packetInfo.tAudioPacketLoss
+
+            if(videoBitrate == 0 || audioBitrate == 0) {
+               testSuite.notError = false;
+            }
+            if(videoPacketLoss !== '-') {
+              videoPacketLoss = videoPacketLoss * 100
+            }
+            if(audioPacketLoss !== '-') {
+              audioPacketLoss = audioPacketLoss * 100
+            }
+            testSuite.extra = `${ this.t('Video_Bitrate')}: ${ videoBitrate } kbps </br>
+            ${ this.t('Audio_Bitrate')}: ${ audioBitrate } kbps </br>
+            ${ this.t('Video_Packet_Loss')}: ${ videoPacketLoss } % </br>
+            ${ this.t('Audio_Packet_Loss')}: ${ audioPacketLoss } % </br>`;
           }
         }, 1500);
       }, 21500);
@@ -785,14 +956,29 @@ export default {
     haveATry() {
       this.snackbar = false;
       this.dialog = true;
-      this.retry();
+      this.ProfileForTry.forEach((item) => {
+        let index = this.profiles.findIndex((profile) => {
+          return profile.resolution === item.resolution
+        })
+        if(index === -1) {
+          return
+        } 
+        item.isSuccess = this.profiles[index].status === 'resolve'
+      })
+      this.retry(0);
     },
 
-    retry() {
-      this.trying = true;
-      if (this.sendStream) {
+    retry(currentIndex) {
+      if (this.sendStream && this.sendStream.isPlaying()) {
         this.sendStream.stop();
         this.sendStream.close();
+      }
+      //If the resolution is equal to not supported, 1. Do not play video stream; 2. Give error prompt
+      if (this.ProfileForTry[currentIndex].isSuccess) {
+        this.showVideo = true
+      } else {
+        this.showVideo = false
+        return
       }
       this.sendStream = AgoraRtc.createStream({
         streamID: this.sendId,
@@ -800,15 +986,13 @@ export default {
         audio: true,
         screen: false
       });
-      this.sendStream.setVideoProfile(this.ProfileForTry[this.currentProfile]);
+      this.sendStream.setVideoProfile(this.ProfileForTry[currentIndex].resolution);
       this.sendStream.init(
         () => {
           this.sendStream.play("modal-video");
-          this.trying = false;
         },
         err => {
           this.errMsgForTry = err.msg;
-          this.trying = false;
         }
       );
     },
@@ -823,6 +1007,9 @@ export default {
 </script>
 
 <style>
+.zh .headline {
+  font-size: 24px !important;
+}
 #test-send {
   width: 640px;
   height: 360px;
@@ -840,8 +1027,158 @@ export default {
   height: 240px;
   margin: 0 auto;
 }
+@-webkit-keyframes rotate {
+  0% {
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg)
+  }
+
+  100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg)
+  }
+}
+
+@keyframes rotate {
+  0% {
+      -webkit-transform: rotate(0deg);
+      transform: rotate(0deg)
+  }
+
+  100% {
+      -webkit-transform: rotate(360deg);
+      transform: rotate(360deg)
+  }
+}
+.github-box {
+  position: absolute;
+  width: 155px;
+  height: 45px;
+  border-radius: 28px;
+  background: #186bcc;
+  right: 330px;
+  padding: 10px;
+  opacity: 0.65;
+  top: 75px;
+  right: 60px;
+  background-color: #e5e5e5;
+  z-index: 99999;
+}
+
+.github-text {
+  top: -20%;
+  left: 15%;
+  transform: translate(15%, -20%);
+}
+
+.github-text1 {
+  position: absolute;
+  font-size: 14px;
+  color: black;
+  right: 43px;
+}
+
+.github-text2 {
+  position: absolute;
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 13px;
+  margin-top: -5px;
+  right: 32px;
+  color: black;
+}
+
+.github { 
+  cursor: pointer;
+  background-repeat: no-repeat;
+  position: absolute;
+  background-image: url("./assets/github.png");
+  background-size: 36px;
+  display: block;
+  width: 36px;
+  height: 36px;
+  top: 45px;
+  /* left: 5px; */
+  border-radius: 28px;
+  transform: translateY(-40px);
+  /* -webkit-box-reflect: below;
+  -webkit-box-reflect:below 2px 
+  -webkit-linear-gradient(90deg, rgba(0,0,0,0) 15%,rgba(0,0,0,0.5)); */
+ }
+
+.aperture {
+  /* display: inline-block; */
+  width: 46px !important;
+  height: 46px !important;
+  position: absolute;
+  top: 26px;
+  z-index: 1999;
+}
+
+/* .aperture::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: -24px;
+    left: 16px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 10px #fff06a, inset 4px 0 16px #f0f, inset -4px 0 16px #0ff, inset 4px 0 16px #f0f, inset -4px 0 16px #0ff, 0 0 10px #fff06a, -6px 0 36px #f0f, 6px 0 36px #0ff;
+    -webkit-animation: rotate 3s infinite linear;
+    animation: rotate 3s infinite linear;
+} */
+
 .v-list__tile {
   min-height: 48px!important;
   height: auto!important;
 }
+
+  .proxy {
+    font-size: 12px;
+    margin-left: 16px;
+    margin-top: 12px;
+    text-align: end;
+    padding-right: 60px !important;
+  }
+  .proxy .v-label {
+    color: #333333;
+    width: 100px;
+    display: block;
+    float: left;
+    line-height: 36px;
+    height: 36px;
+    text-align: start;
+  }
+  .proxy .v-btn__content {
+    font-size: 12px;
+  }
+  .proxy .v-btn-toggle .v-btn{
+    width: 80px;
+  }
+  .proxy .v-btn-toggle .v-btn.v-btn--active {
+    background-color: dodgerblue;
+    color: white;
+  }
+  .tip {
+    color: #666666;
+    font-size: 12px;
+    padding-left: 36px;
+  }
+  .tip_icon{
+    background-repeat: no-repeat;
+    position: absolute;
+    background-image: url("./assets/info.png");
+    background-size: 18px;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    margin-left: -24px;
+  }
+  .v-card__text {
+    padding: 0 16px;
+    width: 100%;
+  }
+  .v-card {
+    min-width: 280px;
+  }
 </style>
